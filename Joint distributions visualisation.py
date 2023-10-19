@@ -5,7 +5,6 @@ Created on Mon Aug 22 18:22:17 2022
 
 @author: anastasiamalakhova 
 """
-
 #######################
 # Importing libraries #
 #######################
@@ -49,7 +48,6 @@ Z_axis = np.asarray(Z_axis)
 X_axis = np.repeat(list(X_axis),number_of_points)
 Y_axis = np.array(list(Y_axis)*number_of_points)
 
-
 # Initialising figures in Dash
 
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -84,7 +82,6 @@ app.layout = html.Div(children=[
             style={'backgroundColor':colors['background'], 'text-align':'center', 
                    'display':'grid', 'grid-column-start': '1','grid-column-end': '3', 'grid-row-start': '1'}),
 
-    
     # First distribution
     html.Div(children='''
              Please choose the first distribution: 
@@ -192,15 +189,12 @@ app.layout = html.Div(children=[
              
     # style of the layout    
     style={'backgroundColor':colors['background'], 'display': 'grid', 'grid-template-columns': '30% 70%'})
-             
-
-             
+                      
 # Template - background of the graph
 pio.templates["custom_dark"] = go.layout.Template(
     layout=go.Layout(
         colorway=['#ff0000', '#00ff00', '#0000ff']))
       
-
 pio.templates['custom_dark']['layout']['yaxis']['gridcolor'] = 'rgb(223,245,249)'
 pio.templates['custom_dark']['layout']['xaxis']['gridcolor'] = 'rgb(223,245,249)'
 figure_to_display.layout.template = 'custom_dark'
@@ -262,7 +256,6 @@ def callback_1(visibility_state_1):
 )
 def callback_2(visibility_state_2):
     return [determine_visibility(visibility_state_2, component_id, component_visibility_2) for component_id in component_visibility_2.keys()]
-
 
 @app.callback(
     Output('graph2', 'figure'),
@@ -333,7 +326,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         f_xy = lambda_x_axis*math.exp(-lambda_x_axis*x)*(gamma((dof_2+1)/2)*(1+((y**2)/dof_2))**(-0.5*(dof_2+1)))/(math.sqrt(math.pi*dof_2)*gamma(dof_2/2))
         return f_xy
             
-    
     def convert_or_default(value, default_value):
         return default_value if value == '' else float(value)
 
@@ -356,12 +348,9 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
     # Apply conversion function
     mu_1, std_1, mu_2, std_2, lambda_x_axis, lambda_y_axis, shape_1, rate_1, shape_2, rate_2, dof_1, dof_2 = [convert_or_default(value, default) for value, default in params_defaults]
 
-    
-    
     n = 100
     
     if dropdown == 'exponential' and dropdown2 == 'exponential':
-        
         X_axis = np.linspace(0,5,n)
         Y_axis = np.linspace(0,5,n) 
         Z_axis = []
@@ -371,16 +360,13 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                 entry = joint_pdf_exponential_exponential(x,y)
                 Z_axis.append(entry)
 
-        
         figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Exponential({})'.format(lambda_x_axis),
                             yaxis_title= 'Exponential({})'.format(lambda_y_axis),),
                           )
-    
-
+	    
     elif dropdown == 'exponential' and dropdown2 == 'normal':
-
         X_axis = np.linspace(0,mu_2+2*std_2,n) #exponential
         Y_axis = np.linspace(mu_2 - 3*std_2, mu_2 + 3*std_2, n) #normal
         Z_axis = []
@@ -396,9 +382,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Normal({}, {})'.format(mu_2, std_2**2),),
                           )
     
-    
     elif dropdown == 'normal' and dropdown2 == 'exponential':
-        
         X_axis = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) #normal
         Y_axis = np.linspace(0,mu_1+2*std_1,n) #exponential
         Z_axis = []
@@ -414,11 +398,8 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Normal({}, {})'.format(mu_1, std_1**2),),
                           )
 
-    
     elif dropdown == 'normal' and dropdown2 == 'normal':
-        
         Z_axis = []
-        
         min_X = mu_1-3*std_1
         max_X = mu_1+3*std_1
         min_Y = mu_2-3*std_2
@@ -441,9 +422,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Normal({}, {})'.format(mu_2, std_2**2),),
                           )
     
-    
     if dropdown == 'exponential' and dropdown2 == 'gamma':
-        
         X_axis = np.linspace(0,10,n) # exponential
         Y_axis = np.linspace(0,10,n) # gamma 
         Z_axis = []
@@ -458,7 +437,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             xaxis_title='Exponential({})'.format(lambda_x_axis),
                             yaxis_title= 'Gamma ({}, {})'.format(shape_2, rate_2),),
                           )
-    
     
     if dropdown == 'gamma' and dropdown2 == 'gamma':
         #max(1/rate_1, 10)
@@ -479,9 +457,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Gamma ({}, {})'.format(shape_2, rate_2),),
                           )
     
-
     if dropdown == 'gamma' and dropdown2 == 'exponential':
-        
         X_axis = np.linspace(0,10,n) # gamma
         Y_axis = np.linspace(0,10,n) # exponential
         Z_axis = []
@@ -497,9 +473,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Gamma ({}, {})'.format(shape_1, rate_1),),
                           )
     
-
     if dropdown == 'gamma' and dropdown2 == 'normal':
-        
         X_axis = np.linspace(0,mu_2+ 2*std_2,n) # gamma 
         Y_axis = np.linspace(mu_2 - 3*std_2, mu_2 + 3*std_2, n) # normal
         Z_axis = []
@@ -515,9 +489,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Normal ({}, {})'.format(mu_2, std_2),),
                           )
     
-    
     if dropdown == 'normal' and dropdown2 == 'gamma':
-
         X_axis = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) # normal 
         Y_axis = np.linspace(0,mu_1+ 2*std_1,n) # gamma
         Z_axis = []
@@ -534,7 +506,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                           )
        
     if dropdown == 't-distribution' and dropdown2 == 't-distribution':
-
         X_axis = np.linspace(-5, 5, n)  
         Y_axis = np.linspace(-5, 5, n)  
         Z_axis = []
@@ -551,7 +522,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                           )
         
     if dropdown == 't-distribution' and dropdown2 == 'normal':
-
         X_axis = np.linspace(min(-5, mu_2 - 3*std_2), max(5,mu_2 + 3*std_2), n) # t-distribution
         Y_axis = np.linspace(min(-5,mu_2 - 3*std_2), max(mu_2 + 3*std_2,5), n) # normal 
         Z_axis = []
@@ -567,9 +537,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             yaxis_title= 'Normal ({}, {})'.format(mu_2, std_2),),
                           )
 
-    
     if dropdown == 't-distribution' and dropdown2 == 'exponential':
-
         X_axis = np.linspace(-5, 5, n) # t-distribution
         Y_axis = np.linspace(0,10,n) # exponential
         Z_axis = []
@@ -586,7 +554,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                           )
         
     if dropdown == 't-distribution' and dropdown2 == 'gamma':
-
         X_axis = np.linspace(-5, 5, n) # t-distribution 
         Y_axis = np.linspace(0,10,n) # gamma
         Z_axis = []
@@ -603,7 +570,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                           )
         
     if dropdown == 'normal' and dropdown2 == 't-distribution':
-
         X_axis = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) # normal 
         Y_axis = np.linspace(min(-5,mu_1 - 3*std_1),max(5,mu_1+ 2*std_1),n) # t-distribution
         Z_axis = []
@@ -620,7 +586,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                           )
         
     if dropdown == 'exponential' and dropdown2 == 't-distribution':
-
         X_axis = np.linspace(0, 5, n) # exponential 
         Y_axis = np.linspace(-5,5,n) # t-distribution
         Z_axis = []
@@ -637,7 +602,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                           )
         
     if dropdown == 'gamma' and dropdown2 == 't-distribution':
-
         X_axis = np.linspace(0, 10, n) # gamma 
         Y_axis = np.linspace(-5,5,n) # t-distribution
         Z_axis = []
@@ -652,7 +616,6 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
                             xaxis_title='Gamma ({}, {})'.format(shape_1, rate_1),
                             yaxis_title= 't-distribution ({})'.format(dof_2),),
                           )
-        
         
     Z_axis = np.asarray(Z_axis)
     X_axis = np.repeat(list(X_axis),n)

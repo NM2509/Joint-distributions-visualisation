@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Mon Aug 22 18:22:17 2022
+
 @author: anastasiamalakhova
 """
+
+#######################
+# Importing libraries #
+#######################
 
 import numpy as np 
 import math
@@ -18,54 +24,59 @@ from dash.dependencies import Input, Output
 import webbrowser
 from threading import Timer
 
+#################
+# Initial graph #
+#################
 
-# Initial graph
-n = 100
-X = np.linspace(0,5,n)
-Y = np.linspace(0,5,n)
-lambda_1 = 1
-lambda_2 = 1
+number_of_points = 100
+X_axis = np.linspace(0,5,number_of_points)
+Y_axis = np.linspace(0,5,number_of_points)
+lambda_x_axis = 1
+lambda_y_axis = 1
 
-def joint_pdf_exponential(x,y):
-    f_xy = lambda_1*math.exp(-lambda_1*x)*lambda_2*math.exp(-lambda_2*y)
+def joint_pdf_default(x,y):
+    f_xy = lambda_x_axis*math.exp(-lambda_x_axis*x)*lambda_y_axis*math.exp(-lambda_y_axis*y)
     return f_xy
 
-Z = []
+Z_axis = []
 
-for x in X:
-    for y in Y:
-        entry = joint_pdf_exponential(x,y)
-        Z.append(entry)
-Z = np.asarray(Z)
+for x in X_axis:
+    for y in Y_axis:
+        entry = joint_pdf_default(x,y)
+        Z_axis.append(entry)
+Z_axis = np.asarray(Z_axis)
 
-X = np.repeat(list(X),n)
-Y = np.array(list(Y)*n)
+X_axis = np.repeat(list(X_axis),number_of_points)
+Y_axis = np.array(list(Y_axis)*number_of_points)
 
 
-# Initialising figures - DASH
+# Initialising figures in Dash
 
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
 colors = {'background': 'rgb(223,245,249)'}
 
-fig2 = go.Figure(go.Mesh3d(x=X,y=Y,
-                          z=np.array(Z),opacity=0.7, 
-                          colorscale="greens", intensity=np.array(Z), 
+
+figure_to_display = go.Figure(go.Mesh3d(x=X_axis,y=Y_axis,
+                          z=np.array(Z_axis),opacity=0.7, 
+                          colorscale="greens", intensity=np.array(Z_axis), 
                           visible = True))
 
-fig2.update_layout(paper_bgcolor = colors['background'], 
+figure_to_display.update_layout(paper_bgcolor = colors['background'], 
                   plot_bgcolor = colors['background'], 
                   width=800,
                   height=700,
                   autosize=False,
                   margin=dict(t=70, b=70, l=0, r=0),
                   scene = dict(
-                    xaxis_title='Exponential({})'.format(lambda_1),
-                    yaxis_title= 'Exponential({})'.format(lambda_2),
+                    xaxis_title='Exponential({})'.format(lambda_x_axis),
+                    yaxis_title= 'Exponential({})'.format(lambda_y_axis),
                     zaxis_title='Joint pdf'),
                   )
 
-# App layout
+##############
+# App layout #
+##############
 
 app.layout = html.Div(children=[
     
@@ -73,6 +84,7 @@ app.layout = html.Div(children=[
             style={'backgroundColor':colors['background'], 'text-align':'center', 
                    'display':'grid', 'grid-column-start': '1','grid-column-end': '3', 'grid-row-start': '1'}),
 
+    
     # First distribution
     html.Div(children='''
              Please choose the first distribution: 
@@ -173,12 +185,12 @@ app.layout = html.Div(children=[
     html.Div(children = [ 
         dcc.Graph(
         id='graph2',
-        figure=fig2,)],
+        figure=figure_to_display,)],
         style={'margin-left': '3vw', 'margin-top': '1vw', 'margin-right': '5vw', 'display': 'grid',  'grid-column-start': '2','grid-row-start': '2', 'grid-row-end': '40'}),
       
     ],
              
-    # Style of the layout    
+    # style of the layout    
     style={'backgroundColor':colors['background'], 'display': 'grid', 'grid-template-columns': '30% 70%'})
              
 
@@ -191,412 +203,67 @@ pio.templates["custom_dark"] = go.layout.Template(
 
 pio.templates['custom_dark']['layout']['yaxis']['gridcolor'] = 'rgb(223,245,249)'
 pio.templates['custom_dark']['layout']['xaxis']['gridcolor'] = 'rgb(223,245,249)'
-fig2.layout.template = 'custom_dark'
+figure_to_display.layout.template = 'custom_dark'
 
-# Callbacks
+#########################
+# Callback - parameters #
+#########################
 
-# Parameters
+# Define a mapping of component IDs to the distributions 
 
-# First distribution - mean name
+component_visibility_1 = {
+    'name1': ['normal'],
+    'mu1_': ['normal'],
+    'name2': ['normal'],
+    'std1_': ['normal'],
+    'name3': ['exponential'],
+    'lambda1_': ['exponential'],
+    'name7': ['gamma'],
+    'shape1': ['gamma'],
+    'name8': ['gamma'],
+    'rate1': ['gamma'],
+    'name11': ['t-distribution'],
+    'dof1': ['t-distribution']
+}
+
+component_visibility_2 = {
+    'name4': ['normal'],
+    'mu2_': ['normal'],
+    'name5': ['normal'],
+    'std2_': ['normal'],
+    'name6': ['exponential'],
+    'lambda2_': ['exponential'],
+    'name9': ['gamma'],
+    'shape2': ['gamma'],
+    'name10': ['gamma'],
+    'rate2': ['gamma'],
+    'name12': ['t-distribution'],
+    'dof2': ['t-distribution']
+}
+
+def determine_visibility(visibility_state, component_id, component_visibility):
+    """Determine the visibility based on the selected distribution and component ID."""
+    if visibility_state in component_visibility.get(component_id, []):
+        return {'display': 'block'}
+    return {'display': 'none'}
+
+# Callback for components related to dropdown_first_graph
 @app.callback(
-   Output(component_id='name1', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
+    [Output(component_id, 'style') for component_id in component_visibility_1.keys()],
+    [Input(component_id='dropdown_first_graph', component_property='value')]
+)
+def callback_1(visibility_state_1):
+    return [determine_visibility(visibility_state_1, component_id, component_visibility_1) for component_id in component_visibility_1.keys()]
 
-
-def show_hide_element0(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-
-# First distribution - mean
+# Callback for components related to dropdown_second_graph
 @app.callback(
-   Output(component_id='mu1_', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
+    [Output(component_id, 'style') for component_id in component_visibility_2.keys()],
+    [Input(component_id='dropdown_second_graph', component_property='value')]
+)
+def callback_2(visibility_state_2):
+    return [determine_visibility(visibility_state_2, component_id, component_visibility_2) for component_id in component_visibility_2.keys()]
 
 
-def show_hide_element1(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-# First distribution - standard deviation name
-@app.callback(
-   Output(component_id='name2', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element2(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# First distribution - standard deviation 
-@app.callback(
-   Output(component_id='std1_', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element3(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# First distribution - exponential name 
-@app.callback(
-   Output(component_id='name3', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element4(visibility_state):
-    if visibility_state == 'exponential':
-        return {'display': 'block'} 
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-
-# First distribution - exponential
-@app.callback(
-   Output(component_id='lambda1_', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element5(visibility_state):
-    if visibility_state == 'exponential':
-        return {'display': 'block'} 
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-# First distribution - shape name
-@app.callback(
-   Output(component_id='name7', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element00(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-
-# First distribution - shape
-@app.callback(
-   Output(component_id='shape1', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element10(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-# First distribution - rate name
-@app.callback(
-   Output(component_id='name8', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element2_(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# First distribution - rate
-@app.callback(
-   Output(component_id='rate1', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element30(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# First distribution - degrees of freedom name
-@app.callback(
-   Output(component_id='name11', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element000(visibility_state):
-    if visibility_state == 't-distribution':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-
-# First distribution - degrees of freedom
-@app.callback(
-   Output(component_id='dof1', component_property='style'),
-   [Input(component_id='dropdown_first_graph', component_property='value')])
-
-
-def show_hide_element100(visibility_state):
-    if visibility_state == 't-distribution':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    
-
-
-# Second distribution - mean name
-@app.callback(
-   Output(component_id='name4', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element6(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# Second distribution - mean
-@app.callback(
-   Output(component_id='mu2_', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element7(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-   
-    
-# Second distribution - standard deviation name
-@app.callback(
-   Output(component_id='name5', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element8(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# Second distribution - standard deviation 
-@app.callback(
-   Output(component_id='std2_', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element9(visibility_state):
-    if visibility_state == 'normal':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-# First distribution - exponential name 
-@app.callback(
-   Output(component_id='name6', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element1000(visibility_state):
-    if visibility_state == 'exponential':
-        return {'display': 'block'} 
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-# Second distribution - exponential
-@app.callback(
-   Output(component_id='lambda2_', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element11(visibility_state):
-    if visibility_state == 'exponential':
-        return {'display': 'block'} 
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-# Second distribution - shape name
-@app.callback(
-   Output(component_id='name9', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element60(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# Second distribution - shape
-@app.callback(
-   Output(component_id='shape2', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element70(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-   
-    
-# Second distribution - rate name
-@app.callback(
-   Output(component_id='name10', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element80(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-    
-# Second distribution - rate
-@app.callback(
-   Output(component_id='rate2', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element90(visibility_state):
-    if visibility_state == 'gamma':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    if visibility_state == 't-distribution':
-        return {'display': 'none'}
-    
-
-# Second distribution - degrees of freedom name
-@app.callback(
-   Output(component_id='name12', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element0000(visibility_state):
-    if visibility_state == 't-distribution':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma': 
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    
-
-# Second distribution - degrees of freedom
-@app.callback(
-   Output(component_id='dof2', component_property='style'),
-   [Input(component_id='dropdown_second_graph', component_property='value')])
-
-
-def show_hide_element10000(visibility_state):
-    if visibility_state == 't-distribution':
-        return {'display': 'block'} 
-    if visibility_state == 'exponential':
-        return {'display': 'none'}
-    if visibility_state == 'gamma':
-        return {'display': 'none'}
-    if visibility_state == 'normal':
-        return {'display': 'none'}
-    
-    
 @app.callback(
     Output('graph2', 'figure'),
     Input('dropdown_first_graph', 'value'),
@@ -617,24 +284,25 @@ def show_hide_element10000(visibility_state):
 
 def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value, std1_value, mu2_value, std2_value, shape1, rate1, shape2, rate2, dof1, dof2):
 
+
     def joint_pdf_exponential_exponential(x,y):
-        f_xy = lambda_1*math.exp(-lambda_1*x)*lambda_2*math.exp(-lambda_2*y)
+        f_xy = lambda_x_axis*math.exp(-lambda_x_axis*x)*lambda_y_axis*math.exp(-lambda_y_axis*y)
         return f_xy
     
     def joint_pdf_exponential_normal(x,y):
-        f_xy = lambda_1*math.exp(-lambda_1*x)*(1/(std_2*math.sqrt(2*math.pi)))*math.exp(-0.5*(((y-mu_2)/std_2)**2))
+        f_xy = lambda_x_axis*math.exp(-lambda_x_axis*x)*(1/(std_2*math.sqrt(2*math.pi)))*math.exp(-0.5*(((y-mu_2)/std_2)**2))
         return f_xy
     
     def joint_pdf_normal_exponential(x,y):
-        f_xy = (1/(std_1*math.sqrt(2*math.pi)))*math.exp(-0.5*(((x-mu_1)/std_1)**2))*lambda_2*math.exp(-lambda_2*y)
+        f_xy = (1/(std_1*math.sqrt(2*math.pi)))*math.exp(-0.5*(((x-mu_1)/std_1)**2))*lambda_y_axis*math.exp(-lambda_y_axis*y)
         return f_xy
     
     def joint_pdf_exponential_gamma(x,y):
-        f_xy = lambda_1*math.exp(-lambda_1*x)*((rate_2**shape_2)*(y**(shape_2-1))*math.exp(-rate_2*y))/math.factorial(shape_2-1)
+        f_xy = lambda_x_axis*math.exp(-lambda_x_axis*x)*((rate_2**shape_2)*(y**(shape_2-1))*math.exp(-rate_2*y))/math.factorial(shape_2-1)
         return f_xy
     
     def joint_pdf_gamma_exponential(x,y):
-        f_xy = (((rate_1**shape_1)*(x**(shape_1-1))*math.exp(-rate_1*x))/math.factorial(shape_1-1))*(lambda_2*math.exp(-lambda_2*y))
+        f_xy = (((rate_1**shape_1)*(x**(shape_1-1))*math.exp(-rate_1*x))/math.factorial(shape_1-1))*(lambda_y_axis*math.exp(-lambda_y_axis*y))
         return f_xy
     
     def joint_pdf_gamma_gamma(x,y):
@@ -654,7 +322,7 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         return f_xy
     
     def joint_pdf_t_dist_exponential(x,y):
-        f_xy = (gamma((dof_1+1)/2)*(1+((x**2)/dof_1))**(-0.5*(dof_1+1)))/(math.sqrt(math.pi*dof_1)*gamma(dof_1/2))*(lambda_2*math.exp(-lambda_2*y))
+        f_xy = (gamma((dof_1+1)/2)*(1+((x**2)/dof_1))**(-0.5*(dof_1+1)))/(math.sqrt(math.pi*dof_1)*gamma(dof_1/2))*(lambda_y_axis*math.exp(-lambda_y_axis*y))
         return f_xy
                     
     def joint_pdf_gamma_t_dist(x,y):
@@ -662,139 +330,94 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         return f_xy
         
     def joint_pdf_exponential_t_dist(x,y):
-        f_xy = lambda_1*math.exp(-lambda_1*x)*(gamma((dof_2+1)/2)*(1+((y**2)/dof_2))**(-0.5*(dof_2+1)))/(math.sqrt(math.pi*dof_2)*gamma(dof_2/2))
+        f_xy = lambda_x_axis*math.exp(-lambda_x_axis*x)*(gamma((dof_2+1)/2)*(1+((y**2)/dof_2))**(-0.5*(dof_2+1)))/(math.sqrt(math.pi*dof_2)*gamma(dof_2/2))
         return f_xy
             
     
-    # Normal 1   
-    if mu1_value == '':
-        mu_1 = 10
-    else:
-        mu_1 = float(mu1_value)     
-        
-    if std1_value == '':
-        std_1 = 3
-    else:
-        std_1 = float(std1_value)
-        
-    # Normal 2   
-    if mu2_value == '':
-        mu_2 = 10
-    else:
-        mu_2 = float(mu2_value)     
-        
-    if std2_value == '':
-        std_2 = 3
-    else:
-        std_2 = float(std2_value)
-        
-    # Exponential 1 
-    if lambda1_value == '':
-        lambda_1 = 1
-    else:
-        lambda_1 = float(lambda1_value)
-    
-    # Exponential 2
-    if lambda2_value == '':
-        lambda_2 = 1
-    else: 
-        lambda_2 = float(lambda2_value)
+    def convert_or_default(value, default_value):
+        return default_value if value == '' else float(value)
 
-    # Gamma 1 
-    if shape1 == '':
-        shape_1 = 2
-    else: 
-        shape_1 = float(shape1)
+    # Parameters and their default values
+    params_defaults = [
+        (mu1_value, 10),
+        (std1_value, 3),
+        (mu2_value, 10),
+        (std2_value, 3),
+        (lambda1_value, 1),
+        (lambda2_value, 1),
+        (shape1, 2),
+        (rate1, 0.5),
+        (shape2, 2),
+        (rate2, 0.5),
+        (dof1, 10),
+        (dof2, 10)
+    ]
     
-    if rate1 == '':
-        rate_1 = 0.5
-    else: 
-        rate_1 = float(rate1)
-        
-    # Gamma 2     
-    if shape2 == '':
-        shape_2 = 2
-    else: 
-        shape_2 = float(shape2)
-          
-    if rate2 == '':
-        rate_2 = 0.5
-    else: 
-        rate_2 = float(rate2)
-        
-    # t-distribution 1 
-    if dof1 == '':
-        dof_1 = 10
-    else:
-        dof_1 = float(dof1)
-    
-    # t-distribution 2
-    if dof2 == '':
-        dof_2 = 10
-    else: 
-        dof_2 = float(dof2)
+    # Apply conversion function
+    mu_1, std_1, mu_2, std_2, lambda_x_axis, lambda_y_axis, shape_1, rate_1, shape_2, rate_2, dof_1, dof_2 = [convert_or_default(value, default) for value, default in params_defaults]
+
     
     
     n = 100
     
     if dropdown == 'exponential' and dropdown2 == 'exponential':
         
-        X = np.linspace(0,5,n)
-        Y = np.linspace(0,5,n) 
-        Z = []
+        X_axis = np.linspace(0,5,n)
+        Y_axis = np.linspace(0,5,n) 
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_exponential_exponential(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
 
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
-                            xaxis_title='Exponential({})'.format(lambda_1),
-                            yaxis_title= 'Exponential({})'.format(lambda_2),),
+                            xaxis_title='Exponential({})'.format(lambda_x_axis),
+                            yaxis_title= 'Exponential({})'.format(lambda_y_axis),),
                           )
     
 
     elif dropdown == 'exponential' and dropdown2 == 'normal':
 
-        X = np.linspace(0,mu_2+2*std_2,n) #exponential
-        Y = np.linspace(mu_2 - 3*std_2, mu_2 + 3*std_2, n) #normal
-        Z = []
+        X_axis = np.linspace(0,mu_2+2*std_2,n) #exponential
+        Y_axis = np.linspace(mu_2 - 3*std_2, mu_2 + 3*std_2, n) #normal
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_exponential_normal(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
-                            xaxis_title='Exponential({})'.format(lambda_1),
+                            xaxis_title='Exponential({})'.format(lambda_x_axis),
                             yaxis_title= 'Normal({}, {})'.format(mu_2, std_2**2),),
                           )
     
     
     elif dropdown == 'normal' and dropdown2 == 'exponential':
         
-        X = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) #normal
-        Y = np.linspace(0,mu_1+2*std_1,n) #exponential
-        Z = []
+        X_axis = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) #normal
+        Y_axis = np.linspace(0,mu_1+2*std_1,n) #exponential
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_normal_exponential(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
-                            xaxis_title='Exponential({})'.format(lambda_2),
+                            xaxis_title='Exponential({})'.format(lambda_y_axis),
                             yaxis_title= 'Normal({}, {})'.format(mu_1, std_1**2),),
                           )
 
     
     elif dropdown == 'normal' and dropdown2 == 'normal':
         
-        Z = []
+        Z_axis = []
         
         min_X = mu_1-3*std_1
         max_X = mu_1+3*std_1
@@ -804,15 +427,15 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         range_Y = max_Y - min_Y
         length = max(range_X,range_Y)
         
-        X = np.linspace(mu_1-length/2, mu_1+length/2,n)
-        Y = np.linspace(mu_2-length/2, mu_2+length/2,n)
+        X_axis = np.linspace(mu_1-length/2, mu_1+length/2,n)
+        Y_axis = np.linspace(mu_2-length/2, mu_2+length/2,n)
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = norm.pdf(x,loc = mu_1, scale = std_1)*norm.pdf(y, loc= mu_2, scale = std_2)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Normal({}, {})'.format(mu_1, std_1**2),
                             yaxis_title= 'Normal({}, {})'.format(mu_2, std_2**2),),
@@ -821,18 +444,18 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
     
     if dropdown == 'exponential' and dropdown2 == 'gamma':
         
-        X = np.linspace(0,10,n) # exponential
-        Y = np.linspace(0,10,n) # gamma 
-        Z = []
+        X_axis = np.linspace(0,10,n) # exponential
+        Y_axis = np.linspace(0,10,n) # gamma 
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_exponential_gamma(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
-                            xaxis_title='Exponential({})'.format(lambda_1),
+                            xaxis_title='Exponential({})'.format(lambda_x_axis),
                             yaxis_title= 'Gamma ({}, {})'.format(shape_2, rate_2),),
                           )
     
@@ -841,16 +464,16 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         #max(1/rate_1, 10)
         #max(1/rate_2, 10)
         
-        X = np.linspace(0,10,n)
-        Y = np.linspace(0,10,n)
-        Z = []
+        X_axis = np.linspace(0,10,n)
+        Y_axis = np.linspace(0,10,n)
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_gamma_gamma(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Gamma ({}, {})'.format(shape_1, rate_1),
                             yaxis_title= 'Gamma ({}, {})'.format(shape_2, rate_2),),
@@ -859,34 +482,34 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
 
     if dropdown == 'gamma' and dropdown2 == 'exponential':
         
-        X = np.linspace(0,10,n) # gamma
-        Y = np.linspace(0,10,n) # exponential
-        Z = []
+        X_axis = np.linspace(0,10,n) # gamma
+        Y_axis = np.linspace(0,10,n) # exponential
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_exponential_gamma(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
-                            xaxis_title='Exponential({})'.format(lambda_2),
+                            xaxis_title='Exponential({})'.format(lambda_y_axis),
                             yaxis_title= 'Gamma ({}, {})'.format(shape_1, rate_1),),
                           )
     
 
     if dropdown == 'gamma' and dropdown2 == 'normal':
         
-        X = np.linspace(0,mu_2+ 2*std_2,n) # gamma 
-        Y = np.linspace(mu_2 - 3*std_2, mu_2 + 3*std_2, n) # normal
-        Z = []
+        X_axis = np.linspace(0,mu_2+ 2*std_2,n) # gamma 
+        Y_axis = np.linspace(mu_2 - 3*std_2, mu_2 + 3*std_2, n) # normal
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_gamma_normal(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Gamma ({}, {})'.format(shape_1, rate_1),
                             yaxis_title= 'Normal ({}, {})'.format(mu_2, std_2),),
@@ -895,16 +518,16 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
     
     if dropdown == 'normal' and dropdown2 == 'gamma':
 
-        X = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) # normal 
-        Y = np.linspace(0,mu_1+ 2*std_1,n) # gamma
-        Z = []
+        X_axis = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) # normal 
+        Y_axis = np.linspace(0,mu_1+ 2*std_1,n) # gamma
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_normal_gamma(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Normal ({}, {})'.format(mu_1, std_1),
                             yaxis_title= 'Gamma ({}, {})'.format(shape_2, rate_2),),
@@ -912,16 +535,16 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
        
     if dropdown == 't-distribution' and dropdown2 == 't-distribution':
 
-        X = np.linspace(-5, 5, n)  
-        Y = np.linspace(-5, 5, n)  
-        Z = []
+        X_axis = np.linspace(-5, 5, n)  
+        Y_axis = np.linspace(-5, 5, n)  
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = t.pdf(x, df = dof_1) * t.pdf(y, df = dof_2)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='t-distribution ({})'.format(dof_1),
                             yaxis_title= 't-distribution  ({})'.format(dof_2),),
@@ -929,16 +552,16 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         
     if dropdown == 't-distribution' and dropdown2 == 'normal':
 
-        X = np.linspace(min(-5, mu_2 - 3*std_2), max(5,mu_2 + 3*std_2), n) # t-distribution
-        Y = np.linspace(min(-5,mu_2 - 3*std_2), max(mu_2 + 3*std_2,5), n) # normal 
-        Z = []
+        X_axis = np.linspace(min(-5, mu_2 - 3*std_2), max(5,mu_2 + 3*std_2), n) # t-distribution
+        Y_axis = np.linspace(min(-5,mu_2 - 3*std_2), max(mu_2 + 3*std_2,5), n) # normal 
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = t.pdf(x, df = dof_1)*norm.pdf(y, loc = mu_2, scale = std_2)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='t-distribution ({})'.format(dof_1),
                             yaxis_title= 'Normal ({}, {})'.format(mu_2, std_2),),
@@ -947,33 +570,33 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
     
     if dropdown == 't-distribution' and dropdown2 == 'exponential':
 
-        X = np.linspace(-5, 5, n) # t-distribution
-        Y = np.linspace(0,10,n) # exponential
-        Z = []
+        X_axis = np.linspace(-5, 5, n) # t-distribution
+        Y_axis = np.linspace(0,10,n) # exponential
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_t_dist_exponential(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='t-distribution ({})'.format(dof_1),
-                            yaxis_title= 'Exponential ({})'.format(lambda_2),),
+                            yaxis_title= 'Exponential ({})'.format(lambda_y_axis),),
                           )
         
     if dropdown == 't-distribution' and dropdown2 == 'gamma':
 
-        X = np.linspace(-5, 5, n) # t-distribution 
-        Y = np.linspace(0,10,n) # gamma
-        Z = []
+        X_axis = np.linspace(-5, 5, n) # t-distribution 
+        Y_axis = np.linspace(0,10,n) # gamma
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_t_dist_gamma(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='t-distribution ({})'.format(dof_1),
                             yaxis_title= 'Gamma ({}, {})'.format(shape_2, rate_2),),
@@ -981,16 +604,16 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         
     if dropdown == 'normal' and dropdown2 == 't-distribution':
 
-        X = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) # normal 
-        Y = np.linspace(min(-5,mu_1 - 3*std_1),max(5,mu_1+ 2*std_1),n) # t-distribution
-        Z = []
+        X_axis = np.linspace(mu_1 - 3*std_1, mu_1 + 3*std_1, n) # normal 
+        Y_axis = np.linspace(min(-5,mu_1 - 3*std_1),max(5,mu_1+ 2*std_1),n) # t-distribution
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = norm.pdf(x, loc = mu_1, scale = std_1)*t.pdf(y, df = dof_2)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Normal ({}, {})'.format(mu_1, std_1),
                             yaxis_title= 't-distribution ({})'.format(dof_2),),
@@ -998,46 +621,49 @@ def update_output2(dropdown, dropdown2, lambda1_value, lambda2_value, mu1_value,
         
     if dropdown == 'exponential' and dropdown2 == 't-distribution':
 
-        X = np.linspace(0, 5, n) # exponential 
-        Y = np.linspace(-5,5,n) # t-distribution
-        Z = []
+        X_axis = np.linspace(0, 5, n) # exponential 
+        Y_axis = np.linspace(-5,5,n) # t-distribution
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_exponential_t_dist(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
-                            xaxis_title='Exponential ({})'.format(lambda_1),
+                            xaxis_title='Exponential ({})'.format(lambda_x_axis),
                             yaxis_title= 't-distribution ({})'.format(dof_2),),
                           )
         
     if dropdown == 'gamma' and dropdown2 == 't-distribution':
 
-        X = np.linspace(0, 10, n) # gamma 
-        Y = np.linspace(-5,5,n) # t-distribution
-        Z = []
+        X_axis = np.linspace(0, 10, n) # gamma 
+        Y_axis = np.linspace(-5,5,n) # t-distribution
+        Z_axis = []
         
-        for x in X:
-            for y in Y:
+        for x in X_axis:
+            for y in Y_axis:
                 entry = joint_pdf_gamma_t_dist(x,y)
-                Z.append(entry)
+                Z_axis.append(entry)
         
-        fig2.update_layout(
+        figure_to_display.update_layout(
                           scene = dict(
                             xaxis_title='Gamma ({}, {})'.format(shape_1, rate_1),
                             yaxis_title= 't-distribution ({})'.format(dof_2),),
                           )
         
-    Z = np.asarray(Z)
-    X = np.repeat(list(X),n)
-    Y = np.array(list(Y)*n)
-    fig2.update_traces(x=X, y=Y, z=Z, intensity=np.array(Z))
+        
+    Z_axis = np.asarray(Z_axis)
+    X_axis = np.repeat(list(X_axis),n)
+    Y_axis = np.array(list(Y_axis)*n)
+    figure_to_display.update_traces(x=X_axis, y=Y_axis, z=Z_axis, intensity=np.array(Z_axis))
     
-    return fig2
+    return figure_to_display
 
-# Showing the output
+######################
+# Showing the output #
+######################
 
 # To open the window automatically
 port = 8050

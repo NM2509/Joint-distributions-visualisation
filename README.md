@@ -10,34 +10,16 @@ Other examples from the series include visualisations of 3D Markov Chains, more 
 
 ## Dependencies
 
-To run the code from this repository, please ensure you have the following Python libraries installed:
-
-### Numerical Computations
-* numpy 
-
-### Scientific Computations
-* scipy
-
-### Visualisation
-* plotly
-
-### Building web application
-* dash
-
-### Bootstrap component of Dash
-* dash-bootstrap-components
-
-Note: Some libraries are imported with specific abbreviations or modules in the code, like `import numpy as np` or `from dash import dcc, html`
+All requirements are listed in the requirements.txt file.
 
 ## How to Run
 
 1. **Setup**: 
     - Clone the repository to your local machine
     - Ensure you've installed all required dependencies (see the "Dependencies" section)
-    - Note: Some libraries are imported with specific abbreviations in the code, like `import numpy as np`
 
 2. **Executing the Code**: 
-    - Navigate to the project directory.
-    - Run Python code in "Joint distributions visualisation.py" which will create a local web page
+    - Navigate to the project directory
+    - Run Python code in "main.py" which will create a local web page
     - Choose distributions from the drop down menu and set parameters in the input boxes
     - The resulting joint distribution will appear / change automatically with user inputs
